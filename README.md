@@ -1,6 +1,6 @@
 # 📘 Part B: High-Level System Design – Generating Full Lessons and Courses with AI
 ## 🖼️ High-Level Architecture Diagram (Textual Description)
-<img width="712" alt="image" src="https://github.com/user-attachments/assets/7571c08d-e2f5-496a-bd13-d978dec4f924" />
+<img width="718" alt="image" src="https://github.com/user-attachments/assets/2069e4b5-d1e9-427b-9a0a-6c20f6e117a5" />
 
 ## 🧭 Overview
 
