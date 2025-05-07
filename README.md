@@ -147,8 +147,29 @@ To enable seamless integration between the content generation system and the LMS
 | RAG Search Engine      | Vertex AI Matching Engine (optional) |
 | Secrets Management     | Secret Manager                       |
 | Monitoring & Logging   | Cloud Logging + Operations Suite     |
+| **Runtime Cost Efficiency** | **Cloud Run & Functions are billed per request, per-second CPU & memory usage. Vertex AI charges per 1000 tokens.** |
 
----
+## 💰 Cost Optimization
+
+The system is designed for cost-efficiency using serverless, autoscaling components that only incur charges when actively in use:
+
+- **Cloud Run & Cloud Functions**: Billed per request based on actual usage of CPU and memory. Recommended settings:
+  - Start with 512MB RAM and 1 vCPU for content generation endpoints.
+  - Use concurrency settings to process multiple requests per instance when LLM latency is low.
+  - Avoid always-on instances unless needed.
+
+- **Vertex AI (LLM Execution)**: Pricing is based on token usage (e.g., ~$0.000125 per token). To optimize:
+  - Limit max token output (`max_output_tokens`) to what's pedagogically useful.
+  - Choose lower-cost models (e.g., Gemini-Pro vs. Gemini-Pro-Vision) where applicable.
+  - Use prompt engineering and temperature settings to reduce retries and hallucinations.
+
+- **Cloud Storage**: Use lifecycle policies to delete generated files after 7 days. Switch to Nearline or Coldline tiers for archival content if needed.
+
+- **BigQuery**: Store only essential logs and use table partitioning + expiration to reduce storage costs. Avoid streaming inserts for high-frequency, low-value data.
+
+- **Secret Manager**: Charges are minimal. Rotate secrets periodically and delete unused keys.
+
+By carefully tuning memory, compute, and storage resources, the system ensures high performance without unnecessary expense.
 
 ## 🔐 Security Principles
 
@@ -156,29 +177,36 @@ To enable seamless integration between the content generation system and the LMS
 
 This system adheres to widely recognized security and privacy protocols, especially relevant to AI in educational environments:
 
-- **FERPA** – Family Educational Rights and Privacy Act (student data privacy)
-- **COPPA** – Children’s Online Privacy Protection Act (age-appropriate data handling)
-- **ISO/IEC 27001** – Information security management standards
-- **NIST AI RMF** – Responsible AI usage framework (transparency, fairness, accountability)
-- **Google Cloud Best Practices** – IAM, encryption, and API security patterns
+- **FERPA** – Family Educational Rights and Privacy Act (student data privacy)  
+- **COPPA** – Children’s Online Privacy Protection Act (age-appropriate data handling)  
+- **ISO/IEC 27001** – Information security management standards  
+- **NIST AI RMF** – Responsible AI usage framework (transparency, fairness, accountability)  
+- **Google Cloud Best Practices** – IAM, encryption, and API security patterns  
 
 ---
 
-### 🛡️ Integrated Security Controls
+### 🛡️ Integrated Security Controls (Extended)
 
 Each security measure is applied at a specific stage of the pipeline, as illustrated below:
 
-| Security Measure         | Description                                                                 | Integration Point                                           |
-|--------------------------|-----------------------------------------------------------------------------|-------------------------------------------------------------|
-| **Least Privilege**      | Role-based IAM permissions for users and services                          | Firestore, Cloud Functions, RAG access, LLM calls           |
-| **OAuth2 / SSO**         | Secure user authentication and identity verification                       | Entry point via LMS → user login flow                       |
-| **TTL & Auto-Cleanup**   | Temporary data (e.g. generated content) is automatically deleted after 7 days | Firestore documents, Cloud Storage files                    |
-| **Secret Isolation**     | API keys (LLM, RAG, etc.) stored securely via Secret Manager                | Cloud Run, Vertex AI access points                          |
-| **Encryption**           | Data encrypted at rest (Cloud KMS) and in transit (HTTPS, gRPC)             | Firestore, Cloud Storage, external APIs                     |
-| **Audit Logging**        | Logs all key operations (generation, edits, feedback) with user IDs         | Triggered in LLM invocation, agent orchestration, feedback  |
-| **Rate Limiting**        | Throttling per user/token to prevent abuse or overuse                       | API Gateway or LLM generation endpoints                     |
+| Security Measure               | Description                                                                                         | Integration Point                                                        |
+|--------------------------------|-----------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------|
+| **Least Privilege**            | Role-based IAM permissions for users and services                                                  | Firestore, Cloud Functions, RAG access, LLM calls                         |
+| **OAuth2 / SSO**               | Secure user authentication and identity verification                                               | Entry point via LMS → user login flow                                     |
+| **TTL & Auto-Cleanup**         | Automatically deletes temporary data after a set time (e.g. 7 days)                                | Firestore documents, Cloud Storage files                                  |
+| **Secret Isolation**           | Stores API keys (LLM, RAG, etc.) securely using Secret Manager                                     | Cloud Run, Vertex AI access points                                        |
+| **Encryption**                 | Encrypts data both in transit (HTTPS/gRPC) and at rest (KMS-based)                                 | Firestore, Cloud Storage, external APIs                                   |
+| **Audit Logging**              | Logs all key operations (generation, edits, feedback) with user IDs for compliance & traceability  | Triggered in LLM invocation, agent orchestration, feedback                |
+| **Rate Limiting**              | Prevents abuse via quotas and per-user generation throttling                                       | Implemented via API Gateway or Cloud Endpoints                            |
+| **API Gateway / IAP**          | Adds authentication, routing, and quota enforcement layer over HTTP endpoints                      | Protects access to generation services, feedback submission, LMS APIs     |
+| **LLM Fallback Logic**         | Handles LLM failures by retrying or switching to backup models if needed                           | Applies when LLM is unavailable or fails to meet output requirements      |
+| **Timeouts & Circuit Breakers**| Prevents slow/failed responses from degrading the system                                           | LLM generation endpoints and agent orchestration logic                    |
 
 ---
+
+🔒 *Security is enforced consistently across the pipeline to ensure privacy, compliance, and robustness under real-world conditions.*  
+💼 *This layered approach aligns with modern educational standards and cloud-native security architecture.*
+
 
 ### ✅ Summary
 
